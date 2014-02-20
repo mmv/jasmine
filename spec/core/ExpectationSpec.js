@@ -76,7 +76,7 @@ describe("Expectation", function() {
 
     expectation.toFoo("hello");
 
-    expect(matcherFactory).toHaveBeenCalledWith(util, customEqualityTesters)
+    expect(matcherFactory).toHaveBeenCalledWith(util, customEqualityTesters);
   });
 
   it("wraps matchers's compare functions, passing the actual and expected", function() {
@@ -423,5 +423,116 @@ describe("Expectation", function() {
     });
   });
 
+  it("reports a custom failure message for expectation marked because(reason)", function() {
+    var matchers = {
+        toFoo: function() {
+          return {
+            compare: function() { return { pass: false }; }
+          };
+        }
+      },
+      util = {
+        buildFailureMessage: function() { return "defaults"; }
+      },
+      addExpectationResult = jasmine.createSpy("addExpectationResult"),
+      expectation;
+
+    j$.Expectation.addMatchers(matchers);
+
+    expectation = new j$.Expectation({
+      matchers: matchers,
+      util: util,
+      actual: "an actual",
+      addExpectationResult: addExpectationResult
+    });
+
+    expectation.toFoo("hello").because("bar");
+
+    expect(addExpectationResult).toHaveBeenCalledWith(false, {
+      matcherName: "toFoo",
+      passed: false,
+      expected: "hello",
+      actual: "an actual",
+      message: "bar\ndefaults"
+    });
+  });
+
+  it("reports a custom failure message for expectation marked because(reason) over matcher's reason", function() {
+    var matchers = {
+        toFoo: function() {
+          return {
+            compare: function() {
+              return {
+                pass: false,
+                message: "I'm a custom message"
+              };
+            }
+          };
+        }
+      },
+      addExpectationResult = jasmine.createSpy("addExpectationResult"),
+      expectation;
+
+    j$.Expectation.addMatchers(matchers);
+
+    expectation = new j$.Expectation({
+      matchers: matchers,
+      util: util,
+      actual: "an actual",
+      addExpectationResult: addExpectationResult
+    });
+
+    expectation.toFoo("hello").because("bar");
+
+    expect(addExpectationResult).toHaveBeenCalledWith(false, {
+      matcherName: "toFoo",
+      passed: false,
+      expected: "hello",
+      actual: "an actual",
+      message: "bar\nI'm a custom message"
+    });
+  });
+
+  it("reports a custom failure message for expectation marked because(reason) over matcher's lazy reason", function() {
+    var lazyCalled = 0;
+    var matchers = {
+        toFoo: function() {
+          return {
+            compare: function() {
+              return {
+                pass: false,
+                message: function() {
+                  lazyCalled++;
+                  return "I'm a custom message";
+                }
+              };
+            }
+          };
+        }
+      },
+      addExpectationResult = jasmine.createSpy("addExpectationResult"),
+      expectation;
+
+    j$.Expectation.addMatchers(matchers);
+
+    expectation = new j$.Expectation({
+      matchers: matchers,
+      util: util,
+      actual: "an actual",
+      addExpectationResult: addExpectationResult
+    });
+
+    expectation.toFoo("hello").because("bar");
+
+    expect(addExpectationResult).toHaveBeenCalledWith(false, {
+      matcherName: "toFoo",
+      passed: false,
+      expected: "hello",
+      actual: "an actual",
+      message: "bar\nI'm a custom message"
+    });
+
+    expect(lazyCalled).toBe(1).because("message function should be called only once");
+  });
 });
 

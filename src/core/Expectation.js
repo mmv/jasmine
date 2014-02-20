@@ -56,7 +56,7 @@ getJasmineRequireObj().Expectation = function() {
       }
 
       // TODO: how many of these params are needed?
-      this.addExpectationResult(
+      return this.addExpectationResult(
         result.pass,
         {
           matcherName: name,

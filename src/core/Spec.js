@@ -30,9 +30,23 @@ getJasmineRequireObj().Spec = function(j$) {
 
   Spec.prototype.addExpectationResult = function(passed, data) {
     if (passed) {
-      return;
+      return { because: function() {} };
     }
-    this.result.failedExpectations.push(this.expectationResultFactory(data));
+    var expectationResult = this.expectationResultFactory(data),
+        becauseFn = function(msg) {
+          if (!expectationResult.passed) {
+            if (Object.prototype.toString.apply(expectationResult.message) === "[object Function]") {
+              var originalMsgFn = expectationResult.message;
+              expectationResult.message = function() { return msg + "\n" + originalMsgFn.call(expectationResult); };
+            } else {
+              expectationResult.message = msg + "\n" + expectationResult.message;
+            }
+          }
+        };
+    this.result.failedExpectations.push(expectationResult);
+    return {
+      because: becauseFn
+    };
   };
 
   Spec.prototype.expect = function(actual) {
